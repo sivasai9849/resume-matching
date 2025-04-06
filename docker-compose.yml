@@ -1,0 +1,24 @@
+services:
+  analysis_service:
+    container_name: analysis_service
+    build:
+      context: ./analysis_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./analysis_service/logs:/app/logs
+      - ./analysis_service/candidate_cv:/app/candidate_cv
+    ports:
+      - 7070:7070
+
+  backend_service:
+    container_name: resume_ranking_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env.local
+    ports:
+      - 8000:8000
+    restart: on-failure
+    volumes:
+      - ./backend/logs:/app/logs
