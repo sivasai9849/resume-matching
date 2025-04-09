@@ -145,7 +145,7 @@ const TableCandidates = (props2: Props) => {
       header: "Action",
       cell: ({ row }: { row: Row<any> }) => {
         return (
-          <>
+          <div className="flex items-center space-x-2">
             <button
               className="p-2 text-xs font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
               value={row.original._id}
@@ -154,7 +154,7 @@ const TableCandidates = (props2: Props) => {
               Detail
             </button>
             <button
-              className="p-2 ml-2 text-xs font-medium text-center text-white bg-red-500 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
+              className="p-2 text-xs font-medium text-center text-white bg-red-500 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
               value={row.original._id}
               onClick={() =>
                 showModalDelete(row.original._id, row.original.cv_name)
@@ -162,7 +162,7 @@ const TableCandidates = (props2: Props) => {
             >
               Delete
             </button>
-          </>
+          </div>
         );
       },
     }),

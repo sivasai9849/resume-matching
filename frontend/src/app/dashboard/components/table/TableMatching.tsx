@@ -21,6 +21,7 @@ import { useMatchingDetailData } from "@/app/hooks/react-query/management/file/u
 
 import { BsChevronDown } from "react-icons/bs";
 import { MdLightbulbOutline, MdLightbulb } from "react-icons/md";
+import { FaFilePdf } from "react-icons/fa";
 
 function classNames(...classes: (string | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -63,6 +64,9 @@ const TableFAQ = (props: Props) => {
     selectedJobId
   );
   const [loadingMatching, setLoadingMatching] = React.useState<boolean>(false);
+  const [recordLimit, setRecordLimit] = React.useState(20);
+  const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
+  const [tempRecordLimit, setTempRecordLimit] = React.useState(20);
 
   const [dataForm, setDataForm] = React.useState<DataFormModel>({
     job_name: "",
@@ -78,8 +82,7 @@ const TableFAQ = (props: Props) => {
   const { mutate: updateFAQ } = useUpdateFAQData(dataForm, faqId);
 
   // Define a state variable to store the selected job name
-  const [selectedJobName, setSelectedJobName] =
-    useState<string>("Position Name");
+  const [selectedJobName, setSelectedJobName] = useState("Select Job");
   const { mutate: processMatching } = useMachingData(selectedJobName);
   const { data, isLoading, isError, isPreviousData, refetch } =
     useMatchingPageData(selectedJobName, currentPage + 1, pageSize);
@@ -479,6 +482,48 @@ const TableFAQ = (props: Props) => {
       break;
   }
 
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/matching/export-pdf/${selectedJobName}?limit=${tempRecordLimit}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `matching_report_${selectedJobName}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(url);
+      link.remove();
+
+      setIsExportDialogOpen(false);
+      toast.success("PDF report generated successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF report");
+    }
+  };
+
+  const handleExportClick = () => {
+    setTempRecordLimit(recordLimit);
+    setIsExportDialogOpen(true);
+  };
+
+  const handleExportConfirm = () => {
+    setRecordLimit(tempRecordLimit);
+    handleExportPDF();
+  };
+
   return (
     <>
       <ToastContainer
@@ -493,72 +538,156 @@ const TableFAQ = (props: Props) => {
         pauseOnHover
         theme="dark"
       />
-      <div className="flex pr-20 justify-between">
-        <button
-          type="button"
-          className={`flex mb-4 px-3 py-2 text-sm font-medium text-center text-white rounded-lg focus:outline-none ${
-            loadingMatching
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          }`}
-          onClick={() => handleMatchingCandidate()}
-          disabled={loadingMatching}
-        >
-          {loadingMatching ? (
-            <MdLightbulb style={{ fontSize: "18px" }} className="mr-2" />
-          ) : (
-            <MdLightbulbOutline style={{ fontSize: "18px" }} className="mr-2" />
-          )}
-          {loadingMatching ? "Matching..." : "Match"}
-        </button>
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              type="button"
+              className={`flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg focus:outline-none ${
+                loadingMatching
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              }`}
+              onClick={() => handleMatchingCandidate()}
+              disabled={loadingMatching}
+            >
+              {loadingMatching ? (
+                <MdLightbulb style={{ fontSize: "18px" }} className="mr-2" />
+              ) : (
+                <MdLightbulbOutline style={{ fontSize: "18px" }} className="mr-2" />
+              )}
+              {loadingMatching ? "Matching..." : "Match"}
+            </button>
 
-        <Menu as="div" className="relative inline-block text-left">
-          <div>
-            <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-              {selectedJobName} {/* Display the selected job name */}
-              <BsChevronDown
-                className="-mr-1 h-5 w-5 text-gray-400"
-                aria-hidden="true"
-              />
-            </Menu.Button>
+            <Menu as="div" className="relative inline-block text-left">
+              <div>
+                <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                  {selectedJobName}
+                  <BsChevronDown
+                    className="-mr-1 h-5 w-5 text-gray-400"
+                    aria-hidden="true"
+                  />
+                </Menu.Button>
+              </div>
+              <Transition
+                as={React.Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <div className="py-1">
+                    {detailAllJobData?.map((item) => (
+                      <Menu.Item key={item._id}>
+                        {({ active }) => (
+                          <a
+                            href="#"
+                            onClick={() => handleMenuItemClick(item._id, item.job_name)}
+                            className={classNames(
+                              active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                              "block px-4 py-2 text-sm"
+                            )}
+                          >
+                            {item.job_name}
+                          </a>
+                        )}
+                      </Menu.Item>
+                    ))}
+                  </div>
+                </Menu.Items>
+              </Transition>
+            </Menu>
           </div>
 
-          <Transition
-            as={React.Fragment}
-            enter="transition ease-out duration-100"
-            enterFrom="transform opacity-0 scale-95"
-            enterTo="transform opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="transform opacity-100 scale-100"
-            leaveTo="transform opacity-0 scale-95"
+          <button
+            onClick={handleExportClick}
+            disabled={selectedJobName === "Select Job"}
+            className={`inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+              selectedJobName === "Select Job"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-500 focus-visible:outline-blue-600"
+            }`}
           >
-            <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <div className="py-1">
-                {detailAllJobData?.map((item) => (
-                  <Menu.Item key={item._id}>
-                    {({ active }) => (
-                      <a
-                        href="#"
-                        onClick={() =>
-                          handleMenuItemClick(item._id, item.job_name)
-                        } // Handle item click
-                        className={classNames(
-                          active
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-700",
-                          "block px-4 py-2 text-sm"
-                        )}
-                      >
-                        {item.job_name}
-                      </a>
-                    )}
-                  </Menu.Item>
-                ))}
-              </div>
-            </Menu.Items>
-          </Transition>
-        </Menu>
+            <FaFilePdf className="mr-2" />
+            Export PDF
+          </button>
+        </div>
       </div>
+
+      {/* Export PDF Dialog */}
+      <Transition appear show={isExportDialogOpen} as={React.Fragment}>
+        <Dialog as="div" className="relative z-20" onClose={() => setIsExportDialogOpen(false)}>
+          <Transition.Child
+            as={React.Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={React.Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Export PDF Report
+                  </Dialog.Title>
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-500">
+                      How many records would you like to include in the report?
+                    </p>
+                    <div className="mt-4">
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={tempRecordLimit}
+                        onChange={(e) => setTempRecordLimit(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsExportDialogOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      onClick={handleExportConfirm}
+                    >
+                      Export
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
 
       <br />
       {/* Table */}
@@ -611,7 +740,7 @@ const TableFAQ = (props: Props) => {
                   </Dialog.Title>
                   <div className="mt-4">
                     <p className="text-sm text-gray-500">
-                      Bạn chắc chắn muốn xóa Job này không?
+                      Are you sure you want to delete this job?
                     </p>
                   </div>
 

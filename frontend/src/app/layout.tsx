@@ -12,8 +12,12 @@ const roboto_mono = Roboto_Mono({
 });
 
 export const metadata = {
-  title: "CODEX - Jobfit",
-  description: "CODEX - Jobfit",
+  title: "Intelligent Resume Matching",
+  description: "Intelligent Resume Matching",
+  icons: {
+    icon: '/media/favicon.ico',
+    apple: '/media/apple-touch-icon.png',
+  },
 };
 
 export default async function RootLayout({

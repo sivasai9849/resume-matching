@@ -7,7 +7,10 @@ export default function Dashboard() {
   return (
     <>
       {/* Set the title and meta description of the page */}
-      <HeadMain title="Dashboard - Jobfit" description="Dashboard - Jobfit" />
+      <HeadMain
+        title="Intelligent Resume Matching"
+        description="Intelligent Resume Matching"
+      />
 
       {/* Display the breadcrumb */}
       <BreadcrumbDashboard title="Dashboard" />

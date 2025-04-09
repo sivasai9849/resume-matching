@@ -1,11 +1,18 @@
 import logging
 from math import ceil
+from datetime import datetime
+import os
 
 import config
 import requests
 from app.db import mongo
 from bson.objectid import ObjectId
 from flask_smorest import abort
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
 # Create logger for this module
 logger = logging.getLogger(__name__)
@@ -185,3 +192,151 @@ def get_matching_data(candidate_id, job_id):
     matching["job_name"] = job["job_name"]
 
     return matching
+
+
+def generate_matching_pdf(job_name, limit=20):
+    """Generate a PDF report for matching results of a specific job"""
+    try:
+        # Get the job details
+        job = mongo.db.job.find_one_or_404({"job_name": job_name})
+        job_id = job["_id"]
+
+        # Get all candidates with their matching scores for this job
+        collection_candidate = mongo.db.candidate
+        results = []
+
+        for candidate in collection_candidate.find():
+            matching = mongo.db.matching.find_one(
+                {"job_id": job_id, "candidate_id": candidate["_id"]}
+            )
+
+            if matching is not None:
+                results.append({
+                    "candidate_name": candidate["candidate_name"],
+                    "candidate_email": candidate["email"],
+                    "candidate_phone": candidate["phone_number"],
+                    "cv_name": candidate["cv_name"],
+                    "score": matching["score"]
+                })
+
+        # Sort results by score in descending order and limit to specified number of candidates
+        results = sorted(results, key=lambda x: int(x["score"]), reverse=True)[:limit]
+
+        # Create PDF
+        pdf_dir = os.path.join(os.path.dirname(config.basedir), "pdfs")
+        os.makedirs(pdf_dir, exist_ok=True)
+        
+        filename = f"matching_report_{job_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filepath = os.path.join(pdf_dir, filename)
+        
+        doc = SimpleDocTemplate(
+            filepath,
+            pagesize=letter,
+            rightMargin=50,
+            leftMargin=50,
+            topMargin=50,
+            bottomMargin=50
+        )
+
+        # Prepare the story (content) for the PDF
+        story = []
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=30,
+            alignment=1  # Center alignment
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            spaceAfter=12,
+            spaceBefore=20
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=10,
+            leading=14,
+            spaceAfter=12
+        )
+        
+        # Add title
+        story.append(Paragraph(f"Matching Report - {job_name}", title_style))
+        
+        # Add job description
+        story.append(Paragraph("Job Description:", heading_style))
+        story.append(Paragraph(job["job_description"], normal_style))
+        story.append(Spacer(1, 20))
+        
+        # Add candidates table
+        story.append(Paragraph(f"Top {limit} Candidate Rankings:", heading_style))
+        
+        # Table header
+        table_data = [["Rank", "Name", "Email", "Phone", "Score"]]
+        
+        # Add candidates to table
+        for i, result in enumerate(results, 1):
+            # Create wrapped paragraphs for long text
+            name_para = Paragraph(result["candidate_name"], normal_style)
+            email_para = Paragraph(result["candidate_email"], normal_style)
+            phone_para = Paragraph(result["candidate_phone"], normal_style)
+            score_para = Paragraph(f"{result['score']}%", normal_style)
+            
+            table_data.append([
+                str(i),
+                name_para,
+                email_para,
+                phone_para,
+                score_para
+            ])
+
+        # Create and style the table
+        table = Table(table_data, colWidths=[0.5*inch, 2*inch, 2*inch, 1.5*inch, 0.75*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dee2e6')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        
+        story.append(table)
+        
+        # Add timestamp and note
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(
+            f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            styles["Italic"]
+        ))
+        story.append(Paragraph(
+            f"Note: This report shows the top {limit} candidates based on matching scores.",
+            styles["Italic"]
+        ))
+        
+        # Build PDF
+        doc.build(story)
+        
+        return filepath
+        
+    except Exception as e:
+        logger.error(f"Failed to generate PDF report: {str(e)}")
+        abort(500, message="Failed to generate PDF report")

@@ -50,32 +50,16 @@ const NavbarDashboard = () => {
             {/* Logo */}
             <Link href="/" className="flex ml-2 md:mr-24">
               <Image
-                src="/media/svg/logo2.svg"
-                alt="Logo"
+                src="/media/svg/logo.svg"
+                alt="Intelligent Resume Matching Logo"
                 width={48}
                 height={40}
                 priority
               />
               <span className="ml-2 self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-                {/* Dashboard */}
+                Intelligent Resume Matching
               </span>
             </Link>
-            {/* Form Search */}
-            {/* <div className='hidden lg:block lg:pl-3.5'>
-              <form className="flex items-center ">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="px-4 py-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-600 h-8 w-[500px]"
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  <FaSearch />
-                </button>
-              </form>
-            </div> */}
           </div>
 
           <div className="flex items-center">
@@ -101,73 +85,6 @@ const NavbarDashboard = () => {
                 ></path>
               </svg>
             </button>
-            {/* Notification */}
-            {/* <Menu as="div" className="relative inline-block text-left">
-              <div>
-                <Menu.Button className="p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 mr-2">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" aria-hidden="true"></path></svg>
-                </Menu.Button>
-              </div>
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none min-w-[400px] dark:bg-gray-700">
-                  <div className="px-1 py-1 ">
-                    <Menu.Item>
-                      <div className="block px-4 py-2 text-base font-medium text-center text-gray-700 bg-gray-50 dark:bg-gray-600 dark:text-gray-200">
-                        Notifications
-                      </div>
-                    </Menu.Item>
-                    <Menu.Item>
-                      <Link href="/dashboard" className='flex px-4 py-3 border-b hover:bg-gray-100 dark:hover:bg-gray-600 dark:border-gray-600'>
-                        <div className="flex-shrink-0">
-                          <Image
-                            className='rounded-full'
-                            src="/media/png/users/bonnie-green.png"
-                            alt="Jese image"
-                            width={30}
-                            height={25}
-                            priority
-                          />
-                        </div>
-                        <div className="w-full pl-3">
-                          <div className="text-gray-500 font-normal text-sm mb-1.5 dark:text-gray-400">New message from <span className="font-semibold text-gray-900 dark:text-white">Bonnie Green</span>: "Hey, what's up? All set for the presentation?"</div>
-                          <div className='p-2 bg-gray-900 rounded-md text-center'>
-                            <div className="text-white text-xs font-medium text-primary-700 dark:text-primary-400">a few moments ago</div>
-                          </div>
-                        </div>
-                      </Link>
-                    </Menu.Item>
-                    <Menu.Item>
-                      <Link href="/dashboard" className='flex px-4 py-3 border-b hover:bg-gray-100 dark:hover:bg-gray-600 dark:border-gray-600'>
-                        <div className="flex-shrink-0">
-                          <Image
-                            className='rounded-full'
-                            src="/media/png/users/bonnie-green.png"
-                            alt="Jese image"
-                            width={30}
-                            height={25}
-                            priority
-                          />
-                        </div>
-                        <div className="w-full pl-3">
-                          <div className="text-gray-500 font-normal text-sm mb-1.5 dark:text-gray-400">New message from <span className="font-semibold text-gray-900 dark:text-white">Bonnie Green</span>: "Hey, what's up? All set for the presentation?"</div>
-                          <div className='p-2 bg-gray-900 rounded-md text-center'>
-                            <div className="text-white text-xs font-medium text-primary-700 dark:text-primary-400">5 minutes ago</div>
-                          </div>
-                        </div>
-                      </Link>
-                    </Menu.Item>
-                  </div>
-                </Menu.Items>
-              </Transition>
-            </Menu> */}
             {/* Toggle dark mode */}
             <button
               onClick={toggleDarkMode}
