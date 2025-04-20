@@ -14,6 +14,7 @@ import {
   deleteFAQAxios,
   addFAQAxios,
   updateFAQAxios,
+  sendShortlistNotifications,
 } from "@/app/services/logging/faq/faqService";
 
 export function useFAQData(
@@ -82,4 +83,13 @@ export function useUpdateFAQData(
   faqId: number
 ): UseMutationResult<any> {
   return useMutation(["faq-update"], () => updateFAQAxios(formData, faqId));
+}
+
+export function useShortlistNotification(
+  jobName: string,
+  topN: number
+): UseMutationResult<any> {
+  return useMutation(["shortlist-notify"], () => 
+    sendShortlistNotifications(jobName, topN)
+  );
 }

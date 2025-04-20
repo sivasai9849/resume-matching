@@ -16,12 +16,14 @@ import {
   useDeleteFAQData,
   useAddFAQData,
   useUpdateFAQData,
+  useShortlistNotification,
 } from "@/app/hooks/react-query/logging/faq/useFAQData";
 import { useMatchingDetailData } from "@/app/hooks/react-query/management/file/useFilesUploadData";
 
 import { BsChevronDown } from "react-icons/bs";
 import { MdLightbulbOutline, MdLightbulb } from "react-icons/md";
 import { FaFilePdf } from "react-icons/fa";
+import { HiOutlineMail } from "react-icons/hi";
 
 function classNames(...classes: (string | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -67,11 +69,16 @@ const TableFAQ = (props: Props) => {
   const [recordLimit, setRecordLimit] = React.useState(20);
   const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
   const [tempRecordLimit, setTempRecordLimit] = React.useState(20);
+  const [isShortlistDialogOpen, setIsShortlistDialogOpen] = React.useState(false);
+  const [shortlistTopN, setShortlistTopN] = React.useState(5);
+  const [isNotifying, setIsNotifying] = React.useState(false);
 
   const [dataForm, setDataForm] = React.useState<DataFormModel>({
     job_name: "",
     job_description: "",
   });
+  const [selectedJobName, setSelectedJobName] = useState("Select Job");
+
 
   // const { data, isLoading, isError, isPreviousData, refetch } = useFAQData((currentPage + 1), pageSize);
   // const { data: detailFAQData, isLoading: isDetailFAQLoading, refetch: refetchDetailFAQData, isSuccess } = useDetailFAQData(faqId);
@@ -80,9 +87,9 @@ const TableFAQ = (props: Props) => {
   const { mutate: deleteFAQ } = useDeleteFAQData(faqId);
   const { mutate: addFAQ } = useAddFAQData(dataForm);
   const { mutate: updateFAQ } = useUpdateFAQData(dataForm, faqId);
+  const { mutate: sendShortlistNotify } = useShortlistNotification(selectedJobName, shortlistTopN);
 
   // Define a state variable to store the selected job name
-  const [selectedJobName, setSelectedJobName] = useState("Select Job");
   const { mutate: processMatching } = useMachingData(selectedJobName);
   const { data, isLoading, isError, isPreviousData, refetch } =
     useMatchingPageData(selectedJobName, currentPage + 1, pageSize);
@@ -524,6 +531,36 @@ const TableFAQ = (props: Props) => {
     handleExportPDF();
   };
 
+  // Handle shortlist notification
+  const handleShortlistClick = () => {
+    if (selectedJobName === "Position Name" || selectedJobName === "Select Job") {
+      toast.error("Please select a job first!");
+      return;
+    }
+    setIsShortlistDialogOpen(true);
+  };
+
+  const handleShortlistConfirm = () => {
+    setIsNotifying(true);
+    
+    sendShortlistNotify(
+      {},
+      {
+        onError: (error: any) => {
+          setIsNotifying(false);
+          setIsShortlistDialogOpen(false);
+          toast.error("Failed to send shortlist notifications");
+          console.error("Shortlist notification error:", error);
+        },
+        onSuccess: (data: any) => {
+          setIsNotifying(false);
+          setIsShortlistDialogOpen(false);
+          toast.success(`Successfully sent notifications to ${data.sent} candidates`);
+        }
+      }
+    );
+  };
+
   return (
     <>
       <ToastContainer
@@ -539,81 +576,109 @@ const TableFAQ = (props: Props) => {
         theme="dark"
       />
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col item-end sm:flex-row justify-between pb-4">
+          <Menu
+            as="div"
+            className="relative inline-block text-left mb-4 sm:mb-0"
+          >
+            <div>
+              <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                {selectedJobName}
+                <BsChevronDown
+                  className="-mr-1 h-5 w-5 text-gray-400"
+                  aria-hidden="true"
+                />
+              </Menu.Button>
+            </div>
+
+            <Transition
+              // as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
+            >
+              <Menu.Items className="absolute left-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  {detailAllJobData?.map((job) => (
+                    <Menu.Item key={job._id}>
+                      {({ active }) => (
+                        <a
+                          href="#"
+                          className={classNames(
+                            active
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700",
+                            "block px-4 py-2 text-sm"
+                          )}
+                          onClick={() =>
+                            handleMenuItemClick(job._id, job.job_name)
+                          }
+                        >
+                          {job.job_name}
+                        </a>
+                      )}
+                    </Menu.Item>
+                  ))}
+                </div>
+              </Menu.Items>
+            </Transition>
+          </Menu>
+
+          <div className="flex flex-row mt-4 sm:mt-0 space-x-2">
             <button
-              type="button"
-              className={`flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg focus:outline-none ${
-                loadingMatching
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              }`}
-              onClick={() => handleMatchingCandidate()}
-              disabled={loadingMatching}
+              onClick={handleMatchingCandidate}
+              className="inline-flex items-center text-white bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+              disabled={loadingMatching || selectedJobName === "Position Name" || selectedJobName === "Select Job"}
             >
               {loadingMatching ? (
-                <MdLightbulb style={{ fontSize: "18px" }} className="mr-2" />
-              ) : (
-                <MdLightbulbOutline style={{ fontSize: "18px" }} className="mr-2" />
-              )}
-              {loadingMatching ? "Matching..." : "Match"}
-            </button>
-
-            <Menu as="div" className="relative inline-block text-left">
-              <div>
-                <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                  {selectedJobName}
-                  <BsChevronDown
-                    className="-mr-1 h-5 w-5 text-gray-400"
+                <>
+                  <svg
                     aria-hidden="true"
-                  />
-                </Menu.Button>
-              </div>
-              <Transition
-                as={React.Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    {detailAllJobData?.map((item) => (
-                      <Menu.Item key={item._id}>
-                        {({ active }) => (
-                          <a
-                            href="#"
-                            onClick={() => handleMenuItemClick(item._id, item.job_name)}
-                            className={classNames(
-                              active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                              "block px-4 py-2 text-sm"
-                            )}
-                          >
-                            {item.job_name}
-                          </a>
-                        )}
-                      </Menu.Item>
-                    ))}
-                  </div>
-                </Menu.Items>
-              </Transition>
-            </Menu>
+                    role="status"
+                    className="inline w-4 h-4 me-3 text-white animate-spin"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="#E5E7EB"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>Process Matching</>
+              )}
+            </button>
+            
+            {/* Export PDF button */}
+            <button
+              onClick={handleExportClick}
+              className="inline-flex items-center text-white bg-green-600 hover:bg-green-700 disabled:bg-green-300 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+              disabled={selectedJobName === "Position Name" || selectedJobName === "Select Job"}
+            >
+              <FaFilePdf className="mr-2" />
+              Export PDF
+            </button>
+            
+            {/* Shortlist notification button */}
+            <button
+              onClick={handleShortlistClick}
+              className="inline-flex items-center text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+              disabled={selectedJobName === "Position Name" || selectedJobName === "Select Job"}
+            >
+              <HiOutlineMail className="mr-2" />
+              Send Shortlist
+            </button>
           </div>
-
-          <button
-            onClick={handleExportClick}
-            disabled={selectedJobName === "Select Job"}
-            className={`inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-              selectedJobName === "Select Job"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-500 focus-visible:outline-blue-600"
-            }`}
-          >
-            <FaFilePdf className="mr-2" />
-            Export PDF
-          </button>
         </div>
       </div>
 
@@ -1093,6 +1158,60 @@ const TableFAQ = (props: Props) => {
           </div>
         </Dialog>
       </Transition>
+
+      {/* Shortlist Notification Dialog */}
+      <Dialog
+        open={isShortlistDialogOpen}
+        onClose={() => !isNotifying && setIsShortlistDialogOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <Dialog.Title className="text-lg font-medium text-gray-900">
+              Send Shortlist Notifications
+            </Dialog.Title>
+            <Dialog.Description className="mt-2 text-sm text-gray-500">
+              Send WhatsApp notifications to top candidates for job: {selectedJobName}
+            </Dialog.Description>
+
+            <div className="mt-4">
+              <label htmlFor="topN" className="block text-sm font-medium text-gray-700">
+                Number of top candidates to notify
+              </label>
+              <input
+                type="number"
+                id="topN"
+                min="1"
+                max="50"
+                value={shortlistTopN}
+                onChange={(e) => setShortlistTopN(parseInt(e.target.value) || 5)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                disabled={isNotifying}
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                type="button"
+                className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={() => setIsShortlistDialogOpen(false)}
+                disabled={isNotifying}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={handleShortlistConfirm}
+                disabled={isNotifying}
+              >
+                {isNotifying ? "Sending..." : "Send Notifications"}
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </>
   );
 };

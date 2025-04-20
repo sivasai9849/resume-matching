@@ -38,6 +38,13 @@ def process_matching(matching_data):
 
     # Loop matching to caculate score for each candidate
     for candidate in candidates:
+        # Skip candidates without resumes
+        if candidate.get("has_resume") is False:
+            logger.info(
+                f"Skipping candidate without resume: {candidate['candidate_name']}"
+            )
+            continue
+
         # Check exist analyse
         matching_exist = mongo.db.matching.find_one(
             {"job_id": job["_id"], "candidate_id": candidate["_id"]}
@@ -286,7 +293,7 @@ def generate_matching_pdf(job_name, limit=20):
             # Create wrapped paragraphs for long text
             name_para = Paragraph(result["candidate_name"], normal_style)
             email_para = Paragraph(result["candidate_email"], normal_style)
-            phone_para = Paragraph(result["candidate_phone"], normal_style)
+            phone_para = Paragraph(str(result["candidate_phone"]), normal_style)
             score_para = Paragraph(f"{result['score']}%", normal_style)
             
             table_data.append([

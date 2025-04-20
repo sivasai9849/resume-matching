@@ -115,9 +115,21 @@ const TableCandidates = (props2: Props) => {
       header: "Phone Number",
       cell: (props) => props.getValue(),
     }),
-    columnHelper.accessor("cv_name", {
-      header: "Candidate CV Name",
-      cell: (props) => props.getValue(),
+    // columnHelper.accessor("cv_name", {
+    //   header: "Candidate CV Name",
+    //   cell: (props) => props.getValue(),
+    // }),
+    // Add Resume Status column
+    columnHelper.display({
+      header: "Resume Status",
+      cell: ({ row }: { row: Row<any> }) => {
+        const hasResume = row.original.has_resume !== false; // Treat undefined as true for backward compatibility
+        return (
+          <div className={`px-2 py-1 text-xs font-medium text-white rounded-lg ${hasResume ? 'bg-green-500' : 'bg-red-500'}`}>
+            {hasResume ? 'Available' : 'Not Available'}
+          </div>
+        );
+      },
     }),
     // columnHelper.accessor("cv_date", {
     //   header: "Candidate Created Date",
@@ -221,7 +233,7 @@ const TableCandidates = (props2: Props) => {
       {/* Drawer */}
       <Drawer anchor="right" open={isOpenDrawer} onClose={handleDrawerClose}>
         <div className="flex items-center p-2 justify-center bg-blue-700 text-white">
-          <div className="text-base font-bold">Detail Analyse Candidate</div>
+          <div className="text-base font-bold">Detail Analyze Candidate</div>
         </div>
         <div className="w-[500px] text-sm">
           {fetching ? (
@@ -365,9 +377,18 @@ const TableCandidates = (props2: Props) => {
                   Candidate CV Name
                 </div>
                 <p className="text-sm leading-6 text-gray-60">
-                  {fileDetailQuery.data?.cv_name
+                  {fileDetailQuery.data?.has_resume === false
+                    ? "Resume not uploaded"
+                    : fileDetailQuery.data?.cv_name
                     ? fileDetailQuery.data?.cv_name
                     : "None"}
+                </p>
+
+                <div className="mt-2 text-base font-semibold leading-7 text-gray-900">
+                  Resume Status
+                </div>
+                <p className={`text-sm leading-6 px-2 py-1 inline-block rounded ${fileDetailQuery.data?.has_resume === false ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                  {fileDetailQuery.data?.has_resume === false ? "Not Available" : "Available"}
                 </p>
 
                 <div className="mt-2 text-base font-semibold leading-7 text-gray-900">

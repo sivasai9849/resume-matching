@@ -8,6 +8,7 @@ from app.db import mongo
 from bson.objectid import ObjectId
 from flask_smorest import abort
 from pytz import timezone
+from app.services import notification_service
 
 # Create logger for this module
 logger = logging.getLogger(__name__)
@@ -47,6 +48,18 @@ def post_job(job_data):
         result = collection.insert_one(response_content)
 
         print("job_id", str(result.inserted_id))
+
+        # Send WhatsApp notifications to all candidates
+        try:
+            notification_stats = notification_service.notify_all_candidates_about_new_job(
+                job_data["job_name"],
+                job_data["job_description"]
+            )
+            logger.info(f"WhatsApp notifications sent: {notification_stats}")
+        except Exception as e:
+            logger.error(f"Failed to send WhatsApp notifications: {str(e)}")
+            # We don't want to abort the job creation if notifications fail
+            pass
 
     except Exception as e:
         logger.error(f"Upload document to Database failed! Error: {str(e)}")

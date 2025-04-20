@@ -90,3 +90,16 @@ export const updateFAQAxios = async (
   );
   return data;
 };
+
+export async function sendShortlistNotifications(jobName: string, topN: number = 5) {
+  try {
+    const response = await useAxios.post(`/matching/shortlist-notify`, {
+      job_name: jobName,
+      top_n: topN
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error sending shortlist notifications:", error);
+    throw error;
+  }
+}

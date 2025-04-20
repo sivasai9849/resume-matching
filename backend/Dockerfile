@@ -9,7 +9,8 @@ RUN apt-get update -y && \
 
 COPY requirements.txt /app
 
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip wheel setuptools
+RUN pip install --no-binary=:all: docx2txt Flask-Principal Flask-Script
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app

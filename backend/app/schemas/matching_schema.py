@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
 
 
 class ProcessMatchingSchema(Schema):
@@ -63,3 +63,8 @@ class MatchingDetailSchema(Schema):
     soft_skill = fields.Nested(AnalyseSchema())
     technical_skill = fields.Nested(AnalyseSchema())
     certificate = fields.Nested(AnalyseSchema())
+
+
+class ShortlistNotificationSchema(Schema):
+    job_name = fields.Str(required=True)
+    top_n = fields.Int(validate=validate.Range(min=1, max=50), required=False)

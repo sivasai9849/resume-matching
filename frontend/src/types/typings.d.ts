@@ -66,6 +66,8 @@ interface CandidateDetailModel {
   phone_number: string;
   email: string;
   comment: string;
+  department?: string;
+  has_resume?: boolean;
   job_recommended: string[];
   cv_name: string;
   created_at: any;
@@ -113,6 +115,8 @@ interface CandidateModel {
   phone_number: string;
   email: string;
   comment: string;
+  department?: string;
+  has_resume?: boolean;
   job_recommended: string;
   cv_name: string;
   created_at: any;

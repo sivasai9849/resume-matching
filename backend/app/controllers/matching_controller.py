@@ -4,8 +4,9 @@ from app.schemas.matching_schema import (
     MatchingFilterPageSchema,
     MatchingPageSchema,
     MatchingDetailSchema,
+    ShortlistNotificationSchema,
 )
-from app.services import matching_service
+from app.services import matching_service, notification_service
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from flask import send_file, request
@@ -61,5 +62,20 @@ class MatchingPDFResource(MethodView):
                 as_attachment=True,
                 download_name=os.path.basename(pdf_path)
             )
+        except Exception as e:
+            abort(500, message=str(e))
+
+
+@blp.route("/matching/shortlist-notify")
+class ShortlistNotification(MethodView):
+    @blp.arguments(ShortlistNotificationSchema)
+    def post(self, notification_data):
+        """Send shortlist notifications to top N candidates for a job"""
+        try:
+            job_name = notification_data["job_name"]
+            top_n = notification_data.get("top_n", 5)  # Default to top 5 if not specified
+            
+            result = notification_service.send_shortlist_notifications(job_name, top_n)
+            return result
         except Exception as e:
             abort(500, message=str(e))

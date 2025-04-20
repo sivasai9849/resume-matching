@@ -6,6 +6,8 @@ class UpdateCandidateSchema(Schema):
     phone_number = fields.Str(required=True)
     email = fields.Str(required=True)
     comment = fields.Str(required=True)
+    department = fields.Str(required=False)
+    has_resume = fields.Bool(required=False)
 
 
 class CandidateSchema(Schema):
@@ -14,6 +16,8 @@ class CandidateSchema(Schema):
     phone_number = fields.Str()
     email = fields.Str()
     comment = fields.Str()
+    department = fields.Str()
+    has_resume = fields.Bool()
     certificate = fields.List(fields.Str())
     degree = fields.List(fields.Str())
     experience = fields.List(fields.Str())
@@ -36,3 +40,7 @@ class CandidatePageSchema(Schema):
 class CandidateFilterSchema(Schema):
     page_size = fields.Int(allow_none=True, required=True)
     page = fields.Int(allow_none=True, required=True)
+
+
+class BulkUploadCandidateSchema(Schema):
+    candidates = fields.List(fields.Dict(), required=True)

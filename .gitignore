@@ -4,6 +4,7 @@ nginx/log
 *.log
 *.mp4
 NOTE.md
+docs
 
 # Environment files
 .env
