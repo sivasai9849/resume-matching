@@ -1,0 +1,27 @@
+version: "2"
+services:
+  analysis_service:
+    image: ghcr.io/sivasai9849/analysis_service:latest
+    ports:
+      - "7070:7070"
+    volumes:
+      - analysis_logs:/app/logs
+      - analysis_cv:/app/candidate_cv
+    env_file:
+      - ./analysis_service/.env
+    restart: always
+    
+  backend_service:
+    image: ghcr.io/sivasai9849/backend_service:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env.local
+    restart: always
+    volumes:
+      - backend_logs:/app/logs
+
+volumes:
+  analysis_logs:
+  analysis_cv:
+  backend_logs:
